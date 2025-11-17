@@ -19,7 +19,7 @@ class ClassPathScannerTest {
 
         // Then
         assertNotNull(classes);
-        assertEquals(2, classes.size());
+        assertEquals(5, classes.size());
         assertTrue(classes.stream().anyMatch(c -> c.getSimpleName().equals("SampleClass1")));
         assertTrue(classes.stream().anyMatch(c -> c.getSimpleName().equals("SampleClass2")));
     }

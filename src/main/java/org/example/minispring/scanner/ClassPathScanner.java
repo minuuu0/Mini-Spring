@@ -26,7 +26,7 @@ public class ClassPathScanner {
 
             findClasses(directory, basePackage, classes);
         } catch (Exception e) {
-            // Return empty set on error
+
         }
 
         return classes;
@@ -46,7 +46,7 @@ public class ClassPathScanner {
                 try {
                     classes.add(Class.forName(className));
                 } catch (ClassNotFoundException e) {
-                    // Skip classes that cannot be loaded
+
                 }
             }
         }
