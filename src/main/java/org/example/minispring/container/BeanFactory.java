@@ -8,4 +8,6 @@ public interface BeanFactory {
     boolean containsBean(String beanName);
 
     Object getBean(String beanName);
+
+    <T> T getBean(Class<T> type);
 }
