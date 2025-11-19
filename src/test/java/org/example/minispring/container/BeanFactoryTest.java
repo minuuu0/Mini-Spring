@@ -49,4 +49,19 @@ class BeanFactoryTest {
         assertNotNull(bean);
         assertInstanceOf(TestBean.class, bean);
     }
+
+    @Test
+    void shouldReturnSameInstanceForSingleton() {
+        // Given
+        BeanFactory beanFactory = new SimpleBeanFactory();
+        BeanDefinition definition = new BeanDefinition("testBean", TestBean.class);
+        beanFactory.registerBeanDefinition(definition);
+
+        // When
+        Object bean1 = beanFactory.getBean("testBean");
+        Object bean2 = beanFactory.getBean("testBean");
+
+        // Then
+        assertSame(bean1, bean2);
+    }
 }
