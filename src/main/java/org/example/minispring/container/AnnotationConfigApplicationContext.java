@@ -1,6 +1,7 @@
 package org.example.minispring.container;
 
 import org.example.minispring.bean.BeanDefinition;
+import org.example.minispring.processor.ConfigurationClassProcessor;
 import org.example.minispring.scanner.ComponentScanner;
 
 import java.util.Set;
@@ -85,11 +86,29 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
         Set<BeanDefinition> beanDefinitions = componentScanner.scan(basePackage);
 
         // ================================================================
-        // 2단계: 모든 BeanDefinition을 BeanFactory에 등록
+        // 2단계: 일반 BeanDefinition 등록 (@Component, @Service 등)
         // ================================================================
         // 주의: 아직 실제 빈 인스턴스는 생성하지 않음!
         //       getBean() 호출 시점에 Lazy하게 생성됨
         for (BeanDefinition definition : beanDefinitions) {
+            beanFactory.registerBeanDefinition(definition);
+        }
+
+        // ================================================================
+        // 3단계: @Configuration 클래스 처리
+        // ================================================================
+        // ConfigurationClassProcessor가:
+        //   1) @Configuration 클래스 찾기
+        //   2) @Bean 메서드 스캔
+        //   3) BeanMethodDefinition 생성
+        ConfigurationClassProcessor configProcessor = new ConfigurationClassProcessor(beanFactory);
+        Set<BeanDefinition> beanMethodDefinitions = configProcessor.process(beanDefinitions);
+
+        // ================================================================
+        // 4단계: @Bean 메서드의 BeanDefinition 등록
+        // ================================================================
+        // @Bean 메서드로 등록된 빈도 BeanFactory에 등록
+        for (BeanDefinition definition : beanMethodDefinitions) {
             beanFactory.registerBeanDefinition(definition);
         }
     }

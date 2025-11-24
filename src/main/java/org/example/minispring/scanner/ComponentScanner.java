@@ -1,6 +1,7 @@
 package org.example.minispring.scanner;
 
 import org.example.minispring.annotation.Component;
+import org.example.minispring.annotation.Configuration;
 import org.example.minispring.annotation.Controller;
 import org.example.minispring.annotation.Repository;
 import org.example.minispring.annotation.Service;
@@ -93,6 +94,7 @@ public class ComponentScanner {
         // @Service: 비즈니스 로직 레이어 (내부적으로 @Component 포함)
         // @Repository: 데이터 액세스 레이어 (내부적으로 @Component 포함)
         // @Controller: 프레젠테이션 레이어 (내부적으로 @Component 포함)
+        // @Configuration: 설정 클래스 (내부적으로 @Component 포함)
         //
         // isAnnotationPresent(): 런타임에 리플렉션으로 어노테이션 확인
         //   - 클래스 바이트코드에 어노테이션이 남아있어야 함
@@ -100,7 +102,8 @@ public class ComponentScanner {
         return clazz.isAnnotationPresent(Component.class) ||
                 clazz.isAnnotationPresent(Service.class) ||
                 clazz.isAnnotationPresent(Repository.class) ||
-                clazz.isAnnotationPresent(Controller.class);
+                clazz.isAnnotationPresent(Controller.class) ||
+                clazz.isAnnotationPresent(Configuration.class);
     }
 
     /**

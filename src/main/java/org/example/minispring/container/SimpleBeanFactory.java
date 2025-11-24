@@ -234,17 +234,80 @@ public class SimpleBeanFactory implements BeanFactory {
     }
 
     /**
-     * 빈 생성을 DependencyInjector에 위임
+     * 빈 생성 로직 분기
      *
      * @param definition 생성할 빈의 메타데이터
-     * @return 생성된 빈 인스턴스 (의존성 주입 완료)
+     * @return 생성된 빈 인스턴스
      */
     private Object createBean(BeanDefinition definition) {
+        // ================================================================
+        // BeanMethodDefinition인 경우: @Bean 메서드 호출
+        // ================================================================
+        if (definition instanceof org.example.minispring.processor.ConfigurationClassProcessor.BeanMethodDefinition) {
+            return createBeanFromMethod(
+                (org.example.minispring.processor.ConfigurationClassProcessor.BeanMethodDefinition) definition
+            );
+        }
+
+        // ================================================================
+        // 일반 BeanDefinition: 생성자 주입 방식
+        // ================================================================
         // DependencyInjector가:
         //   1. 생성자 선택
         //   2. 의존성 해결 (재귀)
         //   3. 순환 참조 감지
         //   4. 리플렉션으로 인스턴스 생성
         return dependencyInjector.createBean(definition);
+    }
+
+    /**
+     * @Bean 메서드 호출하여 빈 생성
+     *
+     * @param beanMethodDef @Bean 메서드의 BeanDefinition
+     * @return @Bean 메서드의 반환값 (빈 인스턴스)
+     */
+    private Object createBeanFromMethod(
+        org.example.minispring.processor.ConfigurationClassProcessor.BeanMethodDefinition beanMethodDef
+    ) {
+        try {
+            // ============================================================
+            // 1단계: @Configuration 클래스 인스턴스 가져오기
+            // ============================================================
+            // 예: @Configuration 클래스가 "appConfig"라는 이름으로 등록됨
+            //     → getBean("appConfig")로 인스턴스 획득
+            Object configInstance = getBean(beanMethodDef.getConfigBeanName());
+
+            // ============================================================
+            // 2단계: @Bean 메서드 정보 가져오기
+            // ============================================================
+            java.lang.reflect.Method method = beanMethodDef.getMethod();
+            method.setAccessible(true);  // private 메서드도 호출 가능하도록
+
+            // ============================================================
+            // 3단계: 메서드 파라미터 의존성 해결
+            // ============================================================
+            Class<?>[] parameterTypes = method.getParameterTypes();
+            Object[] args = new Object[parameterTypes.length];
+
+            for (int i = 0; i < parameterTypes.length; i++) {
+                // 파라미터 타입으로 빈 조회 (의존성 주입)
+                // 예: public DataSource dataSource(Config config)
+                //     → config = getBean(Config.class)
+                args[i] = getBean(parameterTypes[i]);
+            }
+
+            // ============================================================
+            // 4단계: @Bean 메서드 호출하여 빈 생성
+            // ============================================================
+            // 예: configInstance.dataSource(args...)
+            //     → HikariDataSource 인스턴스 반환
+            return method.invoke(configInstance, args);
+
+        } catch (Exception e) {
+            throw new RuntimeException(
+                "Failed to create bean from @Bean method: " + beanMethodDef.getBeanName(),
+                e
+            );
+        }
     }
 }
