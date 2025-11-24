@@ -4,8 +4,10 @@ import org.example.minispring.bean.BeanDefinition;
 import org.example.minispring.exception.NoSuchBeanException;
 import org.example.minispring.exception.NoUniqueBeanException;
 import org.example.minispring.injector.DependencyInjector;
+import org.example.minispring.lifecycle.BeanLifecycleManager;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,10 +58,19 @@ public class SimpleBeanFactory implements BeanFactory {
     //   - 순환 참조 감지
     private final DependencyInjector dependencyInjector;
 
+    // ================================================================
+    // 생명주기 관리 담당 객체
+    // ================================================================
+    // BeanLifecycleManager:
+    //   - @PostConstruct 메서드 호출
+    //   - @PreDestroy 메서드 호출
+    private final BeanLifecycleManager lifecycleManager;
+
     public SimpleBeanFactory() {
         // DependencyInjector에 자기 자신(this) 전달
         // → 의존성 해결 시 이 BeanFactory를 사용하여 빈 조회
         this.dependencyInjector = new DependencyInjector(this);
+        this.lifecycleManager = new BeanLifecycleManager();
     }
 
     /**
@@ -148,6 +159,13 @@ public class SimpleBeanFactory implements BeanFactory {
             // ============================================================
             // 다음 요청부터는 2단계에서 즉시 반환됨
             singletonCache.put(beanName, bean);
+
+            // ============================================================
+            // 3-4. @PostConstruct 메서드 호출
+            // ============================================================
+            // 빈 생성 및 의존성 주입 완료 후 초기화 콜백 실행
+            // 순서: 생성자 → 의존성 주입 → @PostConstruct
+            lifecycleManager.invokePostConstruct(bean);
 
             return bean;
         }
@@ -309,5 +327,17 @@ public class SimpleBeanFactory implements BeanFactory {
                 e
             );
         }
+    }
+
+    /**
+     * 모든 싱글톤 빈 인스턴스 조회
+     *
+     * @return 캐시된 모든 빈 인스턴스의 컬렉션
+     */
+    @Override
+    public Collection<Object> getAllBeans() {
+        // 싱글톤 캐시에 저장된 모든 빈 인스턴스 반환
+        // @PreDestroy 호출 시 사용
+        return singletonCache.values();
     }
 }

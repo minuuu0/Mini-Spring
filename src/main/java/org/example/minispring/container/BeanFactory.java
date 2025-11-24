@@ -52,4 +52,11 @@ public interface BeanFactory {
      * @throws org.example.minispring.exception.NoUniqueBeanException 같은 타입의 빈이 2개 이상인 경우
      */
     <T> T getBean(Class<T> type);
+
+    /**
+     * 모든 싱글톤 빈 인스턴스 조회
+     *
+     * @return 캐시된 모든 빈 인스턴스의 컬렉션
+     */
+    java.util.Collection<Object> getAllBeans();
 }

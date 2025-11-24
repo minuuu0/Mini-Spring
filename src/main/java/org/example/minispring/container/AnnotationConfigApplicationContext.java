@@ -1,6 +1,7 @@
 package org.example.minispring.container;
 
 import org.example.minispring.bean.BeanDefinition;
+import org.example.minispring.lifecycle.BeanLifecycleManager;
 import org.example.minispring.processor.ConfigurationClassProcessor;
 import org.example.minispring.scanner.ComponentScanner;
 
@@ -145,5 +146,38 @@ public class AnnotationConfigApplicationContext implements ApplicationContext {
     @Override
     public boolean containsBean(String beanName) {
         return beanFactory.containsBean(beanName);
+    }
+
+    /**
+     * 컨테이너 종료 및 모든 빈의 @PreDestroy 메서드 호출
+     *
+     * 동작:
+     *   1. BeanFactory에서 모든 빈 인스턴스 가져오기
+     *   2. 각 빈의 @PreDestroy 메서드 호출
+     *   3. 리소스 정리
+     */
+    public void close() {
+        // ================================================================
+        // 1단계: BeanLifecycleManager 생성
+        // ================================================================
+        BeanLifecycleManager lifecycleManager = new BeanLifecycleManager();
+
+        // ================================================================
+        // 2단계: 모든 싱글톤 빈 가져오기
+        // ================================================================
+        // SimpleBeanFactory의 singletonCache에 저장된 모든 빈
+        for (Object bean : beanFactory.getAllBeans()) {
+
+            // ============================================================
+            // 3단계: 각 빈의 @PreDestroy 메서드 호출
+            // ============================================================
+            // BeanLifecycleManager가:
+            //   1) @PreDestroy 어노테이션이 있는 메서드 찾기
+            //   2) 메서드 호출
+            //   3) 실패 시 로그만 남기고 계속 진행
+            lifecycleManager.invokePreDestroy(bean);
+        }
+
+        System.out.println("ApplicationContext closed");
     }
 }
